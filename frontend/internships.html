@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartIntern AI</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+    <div class="left">
+        <h1>🤖 SmartIntern AI</h1>
+        <p>AI Powered Internship Recommendation Engine</p>
+    </div>
+
+    <div class="right">
+        <h3>👋 Welcome, Harshitha</h3>
+        <p id="todayDate"></p>
+    </div>
+
+</div>
+
+
+    <input
+        type="text"
+        id="search"
+        class="search-box"
+        placeholder="🔍 Search Company..."
+        onkeyup="searchInternships()"
+    >
+
+    <div class="stats">
+
+        <div class="stat-card">
+            <h2>100%</h2>
+            <p>⭐ AI Match</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>✅</h2>
+            <p>Resume</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>3</h2>
+            <p>🔥 Jobs</p>
+        </div>
+
+        <div class="stat-card">
+    <h2 id="appliedCount">0</h2>
+    <p>📂 Applied</p>
+</div>
+
+    </div>
+
+    <h2>🔥 Recommended Internships</h2>
+
+    <div id="internships">
+        Loading...
+    </div>
+
+</div>
+
+<script>
+
+let internships = [];
+let appliedJobs = [];
+
+const companyLogos = {
+    "Microsoft": "images/microsoft.png",
+    "Google": "images/google.png",
+    "Infosys": "images/infosys.png"
+};
+
+async function loadInternships(){
+
+    try{
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/recommendations"
+        );
+
+        internships = await response.json();
+
+        displayInternships(internships);
+
+    }
+
+    catch(error){
+
+    console.error(error);
+
+    document.getElementById("internships").innerHTML =
+    "<h3>Failed to load internships.</h3>";
+
+}
+
+}
+
+
+function displayInternships(data){
+
+    const container =
+    document.getElementById("internships");
+
+    container.innerHTML="";
+
+    data.forEach(job=>{
+
+        container.innerHTML += `
+
+        <div class="card">
+
+${job.match_score==100 ?
+'<div class="best-badge">🏆 BEST MATCH</div>' : ''}
+
+            <div class="company" style="display:flex;align-items:center;gap:12px;">
+
+    <img
+        src="${companyLogos[job.company]}"
+        width="45"
+        height="45"
+        style="border-radius:8px;object-fit:contain;"
+    >
+
+    <div>
+        <strong>${job.company}</strong><br>
+        <small>${job.role}</small>
+    </div>
+
+</div>
+
+            <p>📍 ${job.location}</p>
+
+            <p>💰 ${job.stipend}</p>
+
+            <p><b>⭐ AI Match ${job.match_score}%</b></p>
+
+            <div class="progress">
+
+    <div
+        class="progress-bar"
+        style="
+            width:${job.match_score}%;
+            background:${
+                job.match_score>=90
+                ? '#28a745'
+                : job.match_score>=60
+                ? '#f39c12'
+                : '#dc3545'
+            };
+        ">
+    </div>
+
+            </div>
+            <button
+    id="btn-${job.id}"
+    onclick="applyJob('${job.company}', ${job.id})">
+    Apply Now
+</button>
+
+        </div>
+
+        `;
+
+    });
+
+}
+
+
+function searchInternships(){
+
+    let value =
+    document.getElementById("search")
+    .value
+    .toLowerCase();
+
+    let filtered =
+    internships.filter(job=>
+
+        job.company.toLowerCase().includes(value) ||
+
+        job.role.toLowerCase().includes(value)
+
+    );
+
+    displayInternships(filtered);
+
+}
+
+
+function applyJob(company,id){
+
+    if(appliedJobs.includes(company)){
+        alert("⚠️ You have already applied to " + company);
+        return;
+    }
+
+    appliedJobs.push(company);
+
+    document.getElementById("appliedCount").innerText =
+    appliedJobs.length;
+
+    let btn = document.getElementById("btn-"+id);
+
+    btn.innerHTML="✅ Applied";
+
+    btn.style.background="#28a745";
+
+    btn.disabled=true;
+
+    alert("🎉 Application submitted successfully to " + company);
+
+}
+document.getElementById("todayDate").innerHTML =
+new Date().toDateString();
+
+loadInternships();
+
+</script>
+
+</body>
+</html>
