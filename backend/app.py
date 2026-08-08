@@ -2,9 +2,9 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.resume_parser import extract_skills
-from backend.recommendation import calculate_match
-from backend.database import create_tables
+from resume_parser import extract_skills
+from recommendation import calculate_match
+from database import create_tables
 
 import shutil
 import os
