@@ -9,15 +9,24 @@ from database import create_tables
 import shutil
 import os
 
+
 app = FastAPI(
     title="SmartIntern AI",
     version="1.0"
 )
 
-# Create database tables
+
+# =========================================================
+# DATABASE
+# =========================================================
+
 create_tables()
 
+
+# =========================================================
 # CORS
+# =========================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,26 +35,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Temporary storage
+
+# =========================================================
+# TEMPORARY STORAGE
+# =========================================================
+
 students = []
 applications = []
+
+# Current student's skills
 student_skills = []
 
-# ---------------- HOME ----------------
+
+# =========================================================
+# HOME
+# =========================================================
 
 @app.get("/")
 def home():
+
     return {
         "message": "Welcome to SmartIntern AI"
     }
 
+
 @app.get("/health")
 def health():
+
     return {
         "status": "Running"
     }
 
-# ---------------- INTERNSHIPS ----------------
+
+# =========================================================
+# INTERNSHIPS
+# =========================================================
 
 def get_internships():
 
@@ -57,7 +81,12 @@ def get_internships():
             "role": "Data Analyst Intern",
             "stipend": "₹35,000/month",
             "location": "Hyderabad",
-            "skills": ["Python", "SQL", "Power BI", "Excel"]
+            "skills": [
+                "Python",
+                "SQL",
+                "Power BI",
+                "Excel"
+            ]
         },
 
         {
@@ -66,7 +95,11 @@ def get_internships():
             "role": "AI Intern",
             "stipend": "₹50,000/month",
             "location": "Bangalore",
-            "skills": ["Python", "Machine Learning", "SQL"]
+            "skills": [
+                "Python",
+                "Machine Learning",
+                "SQL"
+            ]
         },
 
         {
@@ -75,7 +108,11 @@ def get_internships():
             "role": "Python Developer Intern",
             "stipend": "₹20,000/month",
             "location": "Remote",
-            "skills": ["Python", "Git", "FastAPI"]
+            "skills": [
+                "Python",
+                "Git",
+                "FastAPI"
+            ]
         }
 
     ]
@@ -83,15 +120,21 @@ def get_internships():
 
 @app.get("/internships")
 def internships():
+
     return get_internships()
 
 
-# ---------------- RECOMMENDATIONS ----------------
+# =========================================================
+# RECOMMENDATIONS
+# =========================================================
 
 @app.get("/recommendations")
 def recommendations():
 
-    print("Recommendations are using:", student_skills)
+    print(
+        "Current student skills:",
+        student_skills
+    )
 
     results = []
 
@@ -114,7 +157,9 @@ def recommendations():
     return results
 
 
-# ---------------- STUDENT ----------------
+# =========================================================
+# STUDENT REGISTRATION
+# =========================================================
 
 class Student(BaseModel):
 
@@ -130,19 +175,33 @@ def register(student: Student):
 
     global student_skills
 
+    # Save student
     students.append(student)
 
+    # Convert comma-separated skills into list
     student_skills = [
         skill.strip()
         for skill in student.skills.split(",")
+        if skill.strip()
     ]
 
-    print("Student Skills from Registration:", student_skills)
+    print(
+        "Student registered:",
+        student.full_name
+    )
+
+    print(
+        "Student skills:",
+        student_skills
+    )
 
     return {
 
         "message": "Registration Successful!",
-        "student": student
+
+        "student": student,
+
+        "skills": student_skills
 
     }
 
@@ -153,7 +212,9 @@ def get_students():
     return students
 
 
-# ---------------- APPLICATION ----------------
+# =========================================================
+# APPLICATION
+# =========================================================
 
 class Application(BaseModel):
 
@@ -169,6 +230,7 @@ def apply(application: Application):
     return {
 
         "message": "Application Submitted Successfully!",
+
         "application": application
 
     }
@@ -180,35 +242,55 @@ def get_applications():
     return applications
 
 
-# ---------------- RESUME UPLOAD ----------------
+# =========================================================
+# RESUME UPLOAD
+# =========================================================
 
 @app.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
+async def upload_resume(
+    file: UploadFile = File(...)
+):
 
     global student_skills
 
+    # Create uploads folder
     os.makedirs(
         "uploads",
         exist_ok=True
     )
 
-    file_path = f"uploads/{file.filename}"
+    # Save uploaded file
+    file_path = os.path.join(
+        "uploads",
+        file.filename
+    )
 
-    with open(file_path, "wb") as buffer:
+    with open(
+        file_path,
+        "wb"
+    ) as buffer:
 
         shutil.copyfileobj(
             file.file,
             buffer
         )
 
-    student_skills = extract_skills(file_path)
+    # Extract skills from resume
+    student_skills = extract_skills(
+        file_path
+    )
 
-    print("Student Skills from Resume:", student_skills)
+    print(
+        "Skills extracted from resume:",
+        student_skills
+    )
 
     return {
 
         "message": "Resume uploaded successfully!",
+
         "filename": file.filename,
+
         "skills": student_skills
 
     }
