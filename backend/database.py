@@ -3,15 +3,14 @@ import sqlite3
 DATABASE = "smartintern.db"
 
 
-# Create database connection
 def get_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 
-# Create student table
 def create_tables():
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -30,8 +29,14 @@ def create_tables():
     conn.close()
 
 
-# Insert student registration data
-def insert_student(full_name, email, college, degree, skills):
+def insert_student(
+    full_name,
+    email,
+    college,
+    degree,
+    skills
+):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -39,8 +44,13 @@ def insert_student(full_name, email, college, degree, skills):
     INSERT INTO students
     (full_name, email, college, degree, skills)
     VALUES (?, ?, ?, ?, ?)
-    """,
-    (
+    ON CONFLICT(email)
+    DO UPDATE SET
+        full_name = excluded.full_name,
+        college = excluded.college,
+        degree = excluded.degree,
+        skills = excluded.skills
+    """, (
         full_name,
         email,
         college,
@@ -52,8 +62,25 @@ def insert_student(full_name, email, college, degree, skills):
     conn.close()
 
 
-# Fetch all registered students
+def get_student_by_email(email):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM students WHERE email = ?",
+        (email,)
+    )
+
+    student = cursor.fetchone()
+
+    conn.close()
+
+    return student
+
+
 def get_students():
+
     conn = get_connection()
     cursor = conn.cursor()
 

@@ -4,11 +4,10 @@ from pydantic import BaseModel
 
 from resume_parser import extract_skills
 from recommendation import calculate_match
-from database import create_tables
+from database import create_tables, insert_student, get_student_by_email
 
 import shutil
 import os
-
 
 app = FastAPI(
     title="SmartIntern AI",
@@ -129,12 +128,27 @@ def internships():
 # =========================================================
 
 @app.get("/recommendations")
-def recommendations():
+def recommendations(email: str):
 
-    print(
-        "Current student skills:",
-        student_skills
-    )
+    # Get student from database
+    student = get_student_by_email(email)
+
+    if student is None:
+        return {
+            "message": "Student not found",
+            "skills": [],
+            "recommendations": []
+        }
+
+    # Get skills from database
+    student_skills = [
+        skill.strip()
+        for skill in student["skills"].split(",")
+        if skill.strip()
+    ]
+
+    print("Student email:", email)
+    print("Current student skills:", student_skills)
 
     results = []
 
@@ -156,7 +170,6 @@ def recommendations():
 
     return results
 
-
 # =========================================================
 # STUDENT REGISTRATION
 # =========================================================
@@ -175,36 +188,33 @@ def register(student: Student):
 
     global student_skills
 
-    # Save student
-    students.append(student)
-
-    # Convert comma-separated skills into list
+    # Convert comma-separated skills into a list
     student_skills = [
         skill.strip()
         for skill in student.skills.split(",")
         if skill.strip()
     ]
 
-    print(
-        "Student registered:",
-        student.full_name
+    # Save student in temporary list
+    students.append(student)
+
+    # Save student permanently in SQLite database
+    insert_student(
+        student.full_name,
+        student.email,
+        student.college,
+        student.degree,
+        student.skills
     )
 
-    print(
-        "Student skills:",
-        student_skills
-    )
+    print("Student registered:", student.full_name)
+    print("Student skills:", student_skills)
 
     return {
-
         "message": "Registration Successful!",
-
         "student": student,
-
         "skills": student_skills
-
     }
-
 
 @app.get("/students")
 def get_students():

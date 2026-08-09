@@ -1,14 +1,24 @@
-
 const studentName = localStorage.getItem("student_name");
 
 if (studentName) {
     document.getElementById("welcomeName").innerHTML =
         `👋 Welcome, ${studentName}`;
-}async function loadInternships() {
+}
+
+async function loadInternships() {
 
     try {
 
-        const response = await fetch("http://127.0.0.1:8000/recommendations");
+        const studentEmail =
+            localStorage.getItem("student_email");
+
+        if (!studentEmail) {
+            throw new Error("Student email not found");
+        }
+
+        const response = await fetch(
+            `https://smartintern-ai11-1.onrender.com/recommendations?email=${encodeURIComponent(studentEmail)}`
+        );
 
         if (!response.ok) {
             throw new Error("Failed to fetch recommendations");
@@ -19,11 +29,12 @@ if (studentName) {
         // Update AI Match Score
         if (internships.length > 0) {
             document.getElementById("matchScore").innerHTML =
-    internships[0].match_score + "%";
+                internships[0].match_score + "%";
         }
 
         // Update Resume Status
         const resumeStatus = document.getElementById("resume-status");
+
         if (resumeStatus) {
             resumeStatus.innerHTML = "✅ Uploaded";
         }
