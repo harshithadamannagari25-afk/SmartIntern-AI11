@@ -5,6 +5,11 @@ if (studentName) {
         `👋 Welcome, ${studentName}`;
 }
 
+
+// =====================================================
+// LOAD INTERNSHIPS
+// =====================================================
+
 async function loadInternships() {
 
     try {
@@ -26,69 +31,129 @@ async function loadInternships() {
 
         const internships = await response.json();
 
-        // Update AI Match Score
-        if (internships.length > 0) {
+        console.log("Recommendations:", internships);
+
+
+        // =============================================
+        // UPDATE AI MATCH SCORE
+        // =============================================
+
+        if (
+            Array.isArray(internships) &&
+            internships.length > 0
+        ) {
+
             document.getElementById("matchScore").innerHTML =
                 internships[0].match_score + "%";
+
         }
 
-        // Update Resume Status
-        const resumeStatus = document.getElementById("resume-status");
+
+        // =============================================
+        // UPDATE RESUME STATUS
+        // =============================================
+
+        const resumeStatus =
+            document.getElementById("resume-status");
 
         if (resumeStatus) {
-            resumeStatus.innerHTML = "✅ Uploaded";
+
+            resumeStatus.innerHTML =
+                "✅ Uploaded";
+
         }
 
+
+        // =============================================
+        // DISPLAY INTERNSHIPS
+        // =============================================
+
         let html = "";
+
 
         internships.forEach(job => {
 
             html += `
-            <div class="border rounded p-3 mb-3">
 
-                <h5>${job.company}</h5>
+                <div class="border rounded p-3 mb-3">
 
-                <p><strong>${job.role}</strong></p>
+                    <h5>${job.company}</h5>
 
-                <p>📍 ${job.location}</p>
+                    <p>
+                        <strong>${job.role}</strong>
+                    </p>
 
-                <p>💰 ${job.stipend}</p>
+                    <p>
+                        📍 ${job.location}
+                    </p>
 
-                <p style="color:green;font-weight:bold;">
-                    ⭐ AI Match: ${job.match_score}%
-                </p>
+                    <p>
+                        💰 ${job.stipend}
+                    </p>
 
-                <button
-                    class="btn login-btn w-100"
-                    onclick="viewDetails(
-                        '${job.company}',
-                        '${job.role}',
-                        '${job.location}',
-                        '${job.stipend}',
-                        '${job.match_score}'
-                    )">
-                    View Details
-                </button>
+                    <p
+                        style="
+                        color:green;
+                        font-weight:bold;
+                        "
+                    >
+                        ⭐ AI Match:
+                        ${job.match_score}%
+                    </p>
 
-            </div>
+                    <button
+                        class="btn login-btn w-100"
+                        onclick="viewDetails(
+                            '${job.company}',
+                            '${job.role}',
+                            '${job.location}',
+                            '${job.stipend}',
+                            '${job.match_score}'
+                        )"
+                    >
+                        View Details
+                    </button>
+
+                </div>
+
             `;
 
         });
 
-        document.getElementById("internship-list").innerHTML = html;
+
+        document.getElementById(
+            "internship-list"
+        ).innerHTML = html;
+
 
     } catch (error) {
 
-        console.error("Error:", error);
+        console.error(
+            "Recommendation Error:",
+            error
+        );
 
-        document.getElementById("internship-list").innerHTML =
+        document.getElementById(
+            "internship-list"
+        ).innerHTML =
             "<p style='color:red;'>Failed to load internships.</p>";
 
     }
 
 }
 
-function viewDetails(company, role, location, stipend, match) {
+
+// =====================================================
+// VIEW JOB DETAILS
+// =====================================================
+
+function viewDetails(
+    company,
+    role,
+    location,
+    stipend,
+    match
+) {
 
     const url =
         `job-details.html?company=${encodeURIComponent(company)}` +
@@ -100,5 +165,115 @@ function viewDetails(company, role, location, stipend, match) {
     window.location.href = url;
 
 }
+
+
+// =====================================================
+// RESUME UPLOAD
+// =====================================================
+
+async function uploadResume() {
+
+    const fileInput =
+        document.getElementById("resume");
+
+    if (
+        !fileInput ||
+        !fileInput.files.length
+    ) {
+
+        alert(
+            "Please select a resume PDF first."
+        );
+
+        return;
+    }
+
+
+    const file =
+        fileInput.files[0];
+
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+
+    try {
+
+        const response = await fetch(
+            "https://smartintern-ai11-1.onrender.com/upload-resume",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Resume upload failed"
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            "Resume result:",
+            result
+        );
+
+
+        alert(
+            "Resume uploaded successfully!"
+        );
+
+
+        const resumeStatus =
+            document.getElementById(
+                "resume-status"
+            );
+
+
+        if (resumeStatus) {
+
+            resumeStatus.innerHTML =
+                "✅ Uploaded";
+
+        }
+
+
+        // Reload recommendations
+        await loadInternships();
+
+
+    } catch (error) {
+
+        console.error(
+            "Resume upload error:",
+            error
+        );
+
+
+        alert(
+            "Failed to upload resume."
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// START DASHBOARD
+// =====================================================
 
 loadInternships();
