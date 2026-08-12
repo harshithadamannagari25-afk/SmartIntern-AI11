@@ -14,9 +14,7 @@ from database import (
 
 import shutil
 import os
-import smtplib
-
-from email.message import EmailMessage
+import requests
 from dotenv import load_dotenv
 
 
@@ -26,68 +24,81 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 
 # =========================================================
-# SEND REGISTRATION EMAIL
+# SEND REGISTRATION EMAIL USING RESEND
 # =========================================================
 
 def send_registration_email(student_name, student_email):
 
     try:
 
-        message = EmailMessage()
+        url = "https://api.resend.com/emails"
 
-        message["Subject"] = "SmartIntern AI - Registration Successful"
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-        message["From"] = EMAIL_ADDRESS
+        data = {
+            "from": "SmartIntern AI <onboarding@resend.dev>",
+            "to": [student_email],
+            "subject": "SmartIntern AI - Registration Successful",
+            "html": f"""
+            <h2>Congratulations, {student_name}!</h2>
 
-        message["To"] = student_email
+            <p>
+                Your registration for <b>SmartIntern AI</b>
+                has been completed successfully.
+            </p>
 
-        message.set_content(
-            f"""
-Dear {student_name},
+            <p>You can now use SmartIntern AI to:</p>
 
-Congratulations!
+            <ul>
+                <li>Upload your resume</li>
+                <li>Get AI-powered internship recommendations</li>
+                <li>View AI match scores</li>
+                <li>Apply for internships</li>
+                <li>Track your applications</li>
+            </ul>
 
-Your registration for SmartIntern AI has been completed successfully.
+            <p>
+                Thank you for registering with SmartIntern AI.
+            </p>
 
-You can now use SmartIntern AI to:
+            <p>
+                Best Regards,<br>
+                <b>SmartIntern AI Team</b><br>
+                Siva Sivani Degree College
+            </p>
+            """
+        }
 
-• Upload your resume
-• Get AI-powered internship recommendations
-• View AI match scores
-• Apply for internships
-• Track your applications
-
-Thank you for registering with SmartIntern AI.
-
-Best Regards,
-SmartIntern AI Team
-Siva Sivani Degree College
-"""
+        response = requests.post(
+            url,
+            headers=headers,
+            json=data
         )
 
-        with smtplib.SMTP_SSL(
-            "smtp.gmail.com",
-            465
-        ) as smtp:
+        if response.status_code == 200:
 
-            smtp.login(
-                EMAIL_ADDRESS,
-                EMAIL_APP_PASSWORD
+            print(
+                "Registration email sent to:",
+                student_email
             )
 
-            smtp.send_message(message)
+            return True
 
-        print(
-            "Registration email sent to:",
-            student_email
-        )
+        else:
 
-        return True
+            print(
+                "Email sending failed:",
+                response.text
+            )
+
+            return False
 
     except Exception as error:
 
@@ -287,6 +298,7 @@ def recommendations(email: str):
         email
     )
 
+
     print(
         "Current student skills:",
         student_skills
@@ -402,6 +414,7 @@ def register(student: Student):
         "Student registered:",
         student.full_name
     )
+
 
     print(
         "Student skills:",
